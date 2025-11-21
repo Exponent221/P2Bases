@@ -6,6 +6,21 @@ CREATE ROLE gerente;
 CREATE ROLE farmaceutico;
 CREATE ROLE investigador;
 
+-- Logins
+CREATE ROLE login_gerente
+    WITH LOGIN PASSWORD 'Gerente';
+
+CREATE ROLE login_farmaceutico
+    WITH LOGIN PASSWORD 'Farmaceutico';
+
+CREATE ROLE login_investigador
+    WITH LOGIN PASSWORD 'Investigador';
+
+-- Hacer que cada login herede los permisos del rol de grupo
+GRANT gerente      TO login_gerente;
+GRANT farmaceutico TO login_farmaceutico;
+GRANT investigador TO login_investigador;
+
 -- Tabla de usuarios con control de acceso
 CREATE TABLE usuarios (
     id SERIAL PRIMARY KEY,
@@ -121,13 +136,32 @@ GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO gerente;
 GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO gerente;
 
 -- Privilegios para el rol farmacéutico (registrar ventas y modificar lotes)
-GRANT SELECT ON ALL TABLES IN SCHEMA public TO farmaceutico;
+GRANT SELECT ON
+    medicamentos,
+    lotes_medicamentos,
+    transacciones,
+    compuestos_quimicos,
+    interacciones_medicamentos,
+    vista_inventario
+TO farmaceutico;
+-- Operaciones de venta / inventario
 GRANT INSERT, UPDATE ON transacciones TO farmaceutico;
 GRANT UPDATE ON lotes_medicamentos TO farmaceutico;
-GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO farmaceutico;
-
--- Privilegios para el rol investigador (solo consulta)
-GRANT SELECT ON ALL TABLES IN SCHEMA public TO investigador;
+-- Uso de secuencias necesarias
+GRANT USAGE ON SEQUENCE lotes_medicamentos_id_seq  TO farmaceutico;
+GRANT USAGE ON SEQUENCE transacciones_id_seq       TO farmaceutico;
+-- Asegurar que NO tenga acceso a usuarios
+REVOKE ALL PRIVILEGES ON TABLE usuarios FROM farmaceutico;
+-- Privilegios para el rol investigador
+--GRANT SELECT ON ALL TABLES IN SCHEMA public TO investigador;
+GRANT SELECT ON
+    medicamentos,
+    lotes_medicamentos,
+    transacciones,
+    vista_inventario,
+    compuestos_quimicos,
+    interacciones_medicamentos
+TO investigador;
 
 -- Vista para consultas de inventario
 CREATE VIEW vista_inventario AS
